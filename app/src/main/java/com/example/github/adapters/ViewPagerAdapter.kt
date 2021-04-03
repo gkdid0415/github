@@ -1,10 +1,8 @@
 package com.example.github.adapters
 
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.viewpager.widget.PagerAdapter
-import com.example.github.R
 import com.example.github.databinding.ViewpagerMainBinding
 
 class ViewPagerAdapter(
@@ -25,8 +23,8 @@ class ViewPagerAdapter(
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val view =  when(position) {
-            0 -> searchBinding.root
-            else -> favoriteBinding.root
+            0 -> searchBinding.root // Github 사용자 검색 화면
+            else -> favoriteBinding.root // 로컬 즐겨찾기 검색 화면
         }
 
         container.addView(view)

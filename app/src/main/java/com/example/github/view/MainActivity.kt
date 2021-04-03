@@ -1,11 +1,16 @@
-package com.example.github
+package com.example.github.view
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.github.R
 import com.example.github.adapters.UserAdapter
 import com.example.github.adapters.ViewPagerAdapter
 import com.example.github.databinding.ActivityMainBinding
@@ -13,13 +18,12 @@ import com.example.github.databinding.ViewpagerMainBinding
 import com.example.github.model.UserViewModel
 import com.example.github.model.ViewModelFactory
 import com.google.android.material.tabs.TabLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-    companion object {
-        const val TAB_SEARCH = 0 // 사용자 검색
-        const val TAB_FAVORITE = 1 // 즐겨찾기
-    }
-
     private lateinit var viewModel: UserViewModel
     private lateinit var searchBinding: ViewpagerMainBinding
     private lateinit var favoriteBinding: ViewpagerMainBinding
@@ -30,21 +34,22 @@ class MainActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this, ViewModelFactory(application)).get(UserViewModel::class.java)
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         binding.viewModel = viewModel
+        binding.lifecycleOwner = this
 
         searchBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         searchBinding.viewModel = viewModel
-        searchBinding.github.adapter = UserAdapter(this, TAB_SEARCH)
+        searchBinding.github.layoutManager = LinearLayoutManager(this)
 
         favoriteBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         favoriteBinding.viewModel = viewModel
-        favoriteBinding.github.adapter = UserAdapter(this, TAB_FAVORITE)
+        favoriteBinding.github.layoutManager = LinearLayoutManager(this)
 
         viewModel.users.observe(this, Observer {
-
+            searchBinding.github.adapter = UserAdapter(this, it)
         })
 
         viewModel.favorites.observe(this, Observer {
-
+            favoriteBinding.github.adapter = UserAdapter(this, it)
         })
 
         binding.viewpager.adapter = ViewPagerAdapter(searchBinding, favoriteBinding)
@@ -57,7 +62,28 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
+                binding.viewpager.currentItem = tab?.position!!
             }
         })
+
+        binding.search.setOnClickListener {
+            hideKeyboard(binding.input)
+            showLoadingDialog()
+            viewModel.requestUserInfo()
+        }
+    }
+
+    private fun hideKeyboard(v: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(v.windowToken, 0)
+    }
+
+    private fun showLoadingDialog() {
+        val dialog = LoadingDialog(this@MainActivity)
+        CoroutineScope(Main).launch {
+            dialog.show()
+            delay(2000)
+            dialog.dismiss()
+        }
     }
 }

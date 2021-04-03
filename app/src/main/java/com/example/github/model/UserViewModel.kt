@@ -9,23 +9,33 @@ import java.util.regex.Pattern
 
 class UserViewModel(application: Application): AndroidViewModel(application) {
     var userModel = UserModel()
-    var login = ObservableField<String>()
-    var users = MutableLiveData<List<UserInfo>>()
-    var favorites = MutableLiveData<List<UserInfo>>()
+    var login = ObservableField<String>() // 검색어
+    var users = MutableLiveData<List<UserInfo>>() // 검색된 Github 사용자
+    var favorites = MutableLiveData<List<UserInfo>>() // 검색된 로컬 즐겨찾기
 
-    fun onClickButton() {
+    /**
+     * Github 사용자 검색
+     */
+    fun requestUserInfo() {
         userModel.let {
             if (login.get() != null && !Pattern.matches("\\s*", login.get().toString())) {
                 it.getUserInfo(login.get()!!, object : UserContract.Model.UserInfoCallback {
                     override fun onResponse(responseBody: User) {
-                        users.value = responseBody.items
+                        users.postValue(responseBody.items.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { UserInfo -> UserInfo.login }))
                     }
 
                     override fun onFailure(error: String?) {
-                        users.value = null
+                        users.postValue(null)
                     }
                 })
             }
         }
+    }
+
+    /**
+     * 로컬 즐겨찾기 검색
+     */
+    fun requestFavoriteInfo() {
+
     }
 }
