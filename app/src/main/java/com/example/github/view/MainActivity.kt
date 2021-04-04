@@ -9,8 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.github.R
+import com.example.github.adapters.FavoriteAdapter
 import com.example.github.adapters.UserAdapter
 import com.example.github.adapters.ViewPagerAdapter
 import com.example.github.databinding.ActivityMainBinding
@@ -38,18 +38,16 @@ class MainActivity : AppCompatActivity() {
 
         searchBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         searchBinding.viewModel = viewModel
-        searchBinding.github.layoutManager = LinearLayoutManager(this)
 
         favoriteBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         favoriteBinding.viewModel = viewModel
-        favoriteBinding.github.layoutManager = LinearLayoutManager(this)
 
         viewModel.users.observe(this, Observer {
-            searchBinding.github.adapter = UserAdapter(this, it)
+            searchBinding.github.adapter = UserAdapter(this, viewModel, it)
         })
 
         viewModel.favorites.observe(this, Observer {
-            favoriteBinding.github.adapter = UserAdapter(this, it)
+            favoriteBinding.github.adapter = FavoriteAdapter(this, viewModel, it)
         })
 
         binding.viewpager.adapter = ViewPagerAdapter(searchBinding, favoriteBinding)
@@ -69,7 +67,12 @@ class MainActivity : AppCompatActivity() {
         binding.search.setOnClickListener {
             hideKeyboard(binding.input)
             showLoadingDialog()
-            viewModel.requestUserInfo()
+
+            if (binding.viewpager.currentItem == 0) {
+                viewModel.requestUserInfo()
+            } else {
+                viewModel.requestFavoriteInfo()
+            }
         }
     }
 
