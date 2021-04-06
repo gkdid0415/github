@@ -26,14 +26,12 @@ class FavoriteAdapter(
 
         init {
             itemView.setOnClickListener {
-                favorite.isSelected = !favorite.isSelected
+                viewModel.change.set(true) // true: 화면 업데이트
 
                 val item = FavoriteInfo(data[adapterPosition].login, data[adapterPosition].avatarUrl)
-                if (favorite.isSelected) {
-                    viewModel.db?.favorite()?.insert(item)
-                } else {
-                    viewModel.db?.favorite()?.delete(item)
-                }
+                viewModel.db?.favorite()?.delete(item) // DB delete
+
+                viewModel.requestFavoriteInfo()
             }
         }
     }

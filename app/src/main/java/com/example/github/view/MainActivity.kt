@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.github.R
 import com.example.github.adapters.FavoriteAdapter
 import com.example.github.adapters.UserAdapter
@@ -36,16 +37,24 @@ class MainActivity : AppCompatActivity() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = this
 
+        // Github 사용자 검색 화면 바인딩
         searchBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         searchBinding.viewModel = viewModel
 
+        // 로컬 즐겨찾기 검색 화면 바인딩
         favoriteBinding = ViewpagerMainBinding.inflate(LayoutInflater.from(this))
         favoriteBinding.viewModel = viewModel
 
+        val divider = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
+        searchBinding.github.addItemDecoration(divider)
+        favoriteBinding.github.addItemDecoration(divider)
+
+        // Github 사용자 데이터 Observer
         viewModel.users.observe(this, Observer {
             searchBinding.github.adapter = UserAdapter(this, viewModel, it)
         })
 
+        // 로컬 즐겨찾기 데이터 Observer
         viewModel.favorites.observe(this, Observer {
             favoriteBinding.github.adapter = FavoriteAdapter(this, viewModel, it)
         })
@@ -61,6 +70,15 @@ class MainActivity : AppCompatActivity() {
 
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 binding.viewpager.currentItem = tab?.position!!
+
+                if (viewModel.change.get()) {
+                    if (binding.viewpager.currentItem == 0) {
+                        searchBinding.github.adapter?.notifyDataSetChanged()
+                    } else {
+                        viewModel.requestFavoriteInfo()
+                    }
+                    viewModel.change.set(false)
+                }
             }
         })
 
@@ -69,18 +87,26 @@ class MainActivity : AppCompatActivity() {
             showLoadingDialog()
 
             if (binding.viewpager.currentItem == 0) {
+                viewModel.username.set(binding.input.text.toString())
                 viewModel.requestUserInfo()
             } else {
+                viewModel.favoritename.set(binding.input.text.toString())
                 viewModel.requestFavoriteInfo()
             }
         }
     }
 
+    /**
+     * 키보드 컨트롤
+     */
     private fun hideKeyboard(v: View) {
         val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(v.windowToken, 0)
     }
 
+    /**
+     * 로딩 다이얼로그
+     */
     private fun showLoadingDialog() {
         val dialog = LoadingDialog(this@MainActivity)
         CoroutineScope(Main).launch {

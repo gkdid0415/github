@@ -1,6 +1,7 @@
 package com.example.github.model
 
 import android.app.Application
+import androidx.databinding.ObservableBoolean
 import androidx.databinding.ObservableField
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -12,9 +13,11 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
     var userModel = UserModel()
     var db = AppDatabase.getInstance(application.applicationContext)
 
-    var username = ObservableField<String>() // 검색어
+    var username = ObservableField<String>() // Github 사용자 검색 화면 검색어
+    var favoritename = ObservableField<String>() // 로컬 즐겨찾기 검색 화면 검색어
     var users = MutableLiveData<List<UserInfo>>() // 검색된 Github 사용자
     var favorites = MutableLiveData<List<FavoriteInfo>>() // 검색된 로컬 즐겨찾기
+    var change = ObservableBoolean(false) // 뷰에 변경된 사항이 있으면 true
 
     /**
      * Github 사용자 검색
@@ -25,7 +28,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
                 it.getUserInfo(username.get()!!, object : UserContract.Model.UserInfoCallback {
                     override fun onResponse(responseBody: User) {
                         users.postValue(responseBody.items.sortedWith(
-                            compareBy(String.CASE_INSENSITIVE_ORDER) { UserInfo -> UserInfo.login }))
+                            compareBy { UserInfo -> UserInfo.login }))
                     }
 
                     override fun onFailure(error: String?) {
@@ -40,9 +43,9 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
      * 로컬 즐겨찾기 검색
      */
     fun requestFavoriteInfo() {
-        if (username.get() != null && !Pattern.matches("\\s*", username.get().toString())) {
-            favorites.postValue(db!!.favorite().getFavoriteInfo(username.get()!!).sortedWith(
-                compareBy(String.CASE_INSENSITIVE_ORDER) { FavoriteInfo -> FavoriteInfo.login }))
+        if (favoritename.get() != null && !Pattern.matches("\\s*", favoritename.get().toString())) {
+            favorites.postValue(db!!.favorite().getFavoriteInfo(favoritename.get()!!).sortedWith(
+                compareBy { FavoriteInfo -> FavoriteInfo.login }))
         }
     }
 }
